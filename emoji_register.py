@@ -13,6 +13,7 @@ import sys
 import json
 import argparse
 import yaml
+from six.moves import input
 
 
 class SlackAPI(object):
@@ -32,10 +33,8 @@ class SlackAPI(object):
         if configfile:
             with open(configfile) as f:
                 config = yaml.load(f)
-        if sys.version_info.major == 3:
-            raw_input = input
-        self.teamname = config["teamname"] if "teamname" in config else raw_input("TeamName: ")
-        self.email = config["email"] if "email" in config else raw_input("E-mail: ")
+        self.teamname = config["teamname"] if "teamname" in config else input("TeamName: ")
+        self.email = config["email"] if "email" in config else input("E-mail: ")
         self.password = config["password"] if "password" in config else getpass("Password: ")
         if "channel" in config:
             self.channelname = config["channel"]
