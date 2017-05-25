@@ -16,28 +16,25 @@ import yaml
 from six.moves import input
 
 
-class SlackAPI(object):
-    def __init__(self, imagefile, emojiname, channelname, configfile):
-        self.imagefile = imagefile
-        self.emojiname = emojiname
-        self.channelname = channelname
-        self.setlogin(configfile)
-        self.baseurl = "https://" + self.teamname + ".slack.com/"
+class EmojiRegister(object):
+    def run(self):
         self.sessioninit()
         self.get_token_and_name()
         self.get_channellist()
         self.setemoji(self.channelname)
 
-    def setlogin(self, configfile):
-        config = {}
-        if configfile:
-            with open(configfile) as f:
-                config = yaml.load(f)
+    def setconfig(self, imagefile, emojiname, channelname):
+        self.imagefile = imagefile
+        self.emojiname = emojiname
+        self.channelname = channelname
+
+    def setlogin(self, config):
         self.teamname = config["teamname"] if "teamname" in config else input("TeamName: ")
         self.email = config["email"] if "email" in config else input("E-mail: ")
         self.password = config["password"] if "password" in config else getpass("Password: ")
         if "channel" in config:
             self.channelname = config["channel"]
+        self.baseurl = "https://" + self.teamname + ".slack.com/"
 
     def sessioninit(self):
         self.s = requests.Session()
@@ -105,16 +102,25 @@ class SlackAPI(object):
         return emojilist["emoji"]
 
 
-parser = argparse.ArgumentParser(description="Slack Emoji Save Script")
-parser.add_argument("imagefile", action="store", type=str)
-parser.add_argument("--name", "-n", action="store", type=str)
-parser.add_argument("--channel", "-ch", default="emoji")
-parser.add_argument("--config", "-c", action="store")
-args = parser.parse_args()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Slack Emoji Save Script")
+    parser.add_argument("imagefile", action="store", type=str)
+    parser.add_argument("--name", "-n", action="store", type=str)
+    parser.add_argument("--channel", "-ch", default="emoji")
+    parser.add_argument("--config", "-c", action="store")
+    args = parser.parse_args()
 
-args.imagefile = args.imagefile.replace("\\", "/")
-if not args.name:
-    args.name = re.split("[./]", args.imagefile)[-2]
-    print("emoji name > ", args.name)
+    args.imagefile = args.imagefile.replace("\\", "/")
+    if not args.name:
+        args.name = re.split("[./]", args.imagefile)[-2]
+        print("emoji name > ", args.name)
 
-sa = SlackAPI(args.imagefile, args.name, args.channel, args.config)
+    emojiregster = EmojiRegister()
+    emojiregster.setconfig(args.imagefile, args.name, args.channel)
+    if args.config:
+        with open(args.config) as f:
+            config = yaml.load(f)
+    else:
+        config = {}
+    emojiregster.setlogin(config)
+    emojiregster.run()
