@@ -4,7 +4,7 @@
 ```
 git clone https://github.com/shotahirama/slack_emoji_register.git
 cd slack_emoji_register
-pip install -r equirements.txt
+pip install -r requirements.txt
 ```
 
 ## Usage
