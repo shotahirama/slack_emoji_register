@@ -87,7 +87,7 @@ class EmojiRegister(object):
             img.thumbnail((128, 128), Image.ANTIALIAS)
             image = BytesIO()
             img.save(image, img.format)
-            files = {"img": (args.imagefile, image.getvalue())}
+            files = {"img": (self.imagefile, image.getvalue())}
             res = self.s.post(self.baseurl + "/customize/emoji", files=files, data=params)
             if res:
                 emojilist = self.get_emoji_list()
