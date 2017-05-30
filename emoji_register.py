@@ -18,17 +18,17 @@ from six.moves import input
 
 class EmojiRegister(object):
     def run(self):
-        self.sessioninit()
+        self.session_create()
         self.get_token_and_name()
-        self.get_channellist()
+        self.channellist = self.get_channellist()
         self.setemoji(self.channelname)
 
-    def setconfig(self, imagefile, emojiname, channelname):
+    def set_config(self, imagefile, emojiname, channelname):
         self.imagefile = imagefile
         self.emojiname = emojiname
         self.channelname = channelname
 
-    def setlogin(self, config):
+    def set_login(self, config):
         self.teamname = config["teamname"] if "teamname" in config else input("TeamName: ")
         self.email = config["email"] if "email" in config else input("E-mail: ")
         self.password = config["password"] if "password" in config else getpass("Password: ")
@@ -36,7 +36,7 @@ class EmojiRegister(object):
             self.channelname = config["channel"]
         self.baseurl = "https://" + self.teamname + ".slack.com/"
 
-    def sessioninit(self):
+    def session_create(self):
         self.s = requests.Session()
         r = self.s.get(self.baseurl)
         soup = BeautifulSoup(r.text, "lxml")
@@ -47,16 +47,20 @@ class EmojiRegister(object):
         self.s.post(self.baseurl, data=params)
 
     def get_token_and_name(self):
-        messagehtml = self.s.get("https://api.slack.com/custom-integrations/legacy-tokens")
-        messagesoup = BeautifulSoup(messagehtml.text, "lxml")
-        self.token = messagesoup.find("input")["value"]
-        userinfo = json.loads(
-            self.s.post("https://slack.com/api/users.list", data={"token": self.token}).text)
-        self.name = [user["name"] for user in userinfo["members"] if
-                     "email" in user["profile"] and user["profile"]["email"] == self.email][0]
+        try:
+            messagehtml = self.s.get("https://api.slack.com/custom-integrations/legacy-tokens")
+            messagesoup = BeautifulSoup(messagehtml.text, "lxml")
+            self.token = messagesoup.find("input")["value"]
+            userinfo = json.loads(
+                self.s.post("https://slack.com/api/users.list", data={"token": self.token}).text)
+            self.username = [user["name"] for user in userinfo["members"] if
+                             "email" in user["profile"] and user["profile"]["email"] == self.email][0]
+        except:
+            print("You need to generate token")
+            exit(1)
 
     def get_channellist(self):
-        self.channellist = json.loads(
+        return json.loads(
             self.s.post("https://slack.com/api/channels.list", data={"token": self.token}).text)["channels"]
 
     def channnel_post(self, channelname):
@@ -66,7 +70,7 @@ class EmojiRegister(object):
         except:
             print("Channel not found")
             exit(1)
-        sendtext = '@{} 新しい絵文字を登録しました "{}" > :{}:'.format(self.name, self.emojiname, self.emojiname)
+        sendtext = '@{} 新しい絵文字を登録しました "{}" > :{}:'.format(self.username, self.emojiname, self.emojiname)
         self.s.post("https://slack.com/api/chat.postMessage",
                     data={"channel": channelid, "token": self.token, "link_names": "true", "username": "Dr.EMOJI",
                           "as_user": "false", "text": sendtext})
@@ -116,11 +120,11 @@ if __name__ == '__main__':
         print("emoji name > ", args.name)
 
     emojiregster = EmojiRegister()
-    emojiregster.setconfig(args.imagefile, args.name, args.channel)
+    emojiregster.set_config(args.imagefile, args.name, args.channel)
     if args.config:
         with open(args.config) as f:
             config = yaml.load(f)
     else:
         config = {}
-    emojiregster.setlogin(config)
+    emojiregster.set_login(config)
     emojiregster.run()
